@@ -11,17 +11,19 @@
 
 <body>
 
-  <h1>TOTP</h1>
-  
-  <form method="POST">
-      <p>Key:</p>
-      <p id="key-input" name="key"></p>
-      <button id="generate-key__btn" onclick="generateKey()">Generate Key</button>
-  </form>
+  <h1>Generate Key & TOTP</h1>
+
+  <p>Key:</p>
+  <p id="key-input" name="key"></p>
+  <button id="generate-key__btn" data-action="GENERATE" onclick="generateKey()">Generate Key</button>
 
   <p>TOTP:</p>
   <p id="totp-input"></p>
   <button id="generate-totp__btn">Generate TOTP</button>
+
+  <p>Validation:</p>
+  <input type="time" name="validate" id="validate-totp">
+  <button id="validate-totp__btn">Validate TOTP</button>
 
 </body>
 <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
