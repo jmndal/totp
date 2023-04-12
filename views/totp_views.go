@@ -6,15 +6,19 @@ import (
 	"encoding/base32"
 	"fmt"
 	"html/template"
+	"math/rand"
 	"net/http"
 	"time"
 )
+
+const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 func GenerateTOTP(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.ParseFiles("./templates/totp.html"))
 	context := map[string]interface{}{}
 
-	secret := "JBSWY3DPEHPK3PXP" // Example secret from RFC 6238
+	secret := generateKey(15) // Example secret from RFC 6238
+	fmt.Println("secret:", secret)
 	totp, err := TOTPGenerator(secret)
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -63,4 +67,12 @@ func TOTPGenerator(secret string) (string, error) {
 
 	// Convert the TOTP value to a string
 	return fmt.Sprintf("%06d", totp), nil
+}
+
+func generateKey(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = characters[rand.Intn(len(characters))]
+	}
+	return string(b)
 }
