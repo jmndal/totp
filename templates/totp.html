@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -7,11 +8,23 @@
   <link rel="stylesheet" href="/static/css/totp.css">
   <title>Generate TOTP</title>
 </head>
+
 <body>
 
   <h1>TOTP</h1>
   
-</body>
+  <form method="POST">
+      <p>Key:</p>
+      <p id="key-input" name="key"></p>
+      <button id="generate-key__btn" onclick="generateKey()">Generate Key</button>
+  </form>
 
+  <p>TOTP:</p>
+  <p id="totp-input"></p>
+  <button id="generate-totp__btn">Generate TOTP</button>
+
+</body>
+<script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
 <script src="/static/js/totp.js"></script>
+
 </html>
