@@ -14,13 +14,14 @@
   <h1>Generate Key & TOTP</h1>
 
   <p>Key:</p>
-  <p id="key-input" name="key"></p>
+  <p id="key-input" name="key"> {{ .generateSecret }}</p>
   <button id="generate-key__btn" data-action="GENERATE" onclick="generateKey()">Generate Key</button>
 
   <p>TOTP:</p>
-  <p id="totp-input"></p>
-  <button id="generate-totp__btn">Generate TOTP</button>
+  <p id="totp-input">{{ .generateTOTP }}</p>
+  <button id="generate-totp__btn" data-action="GENERATE TOTP" onclick="generateTOTP()">Generate TOTP</button>
 
+  
   <p>Validation:</p>
   <input type="text" name="validate" id="validate-totp">
   <button id="validate-totp__btn">Validate TOTP</button>
