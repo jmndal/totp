@@ -13,6 +13,19 @@ function generateKey() {
   });
 }
 
+function generateTOTP() {
+  $.ajax({
+    method: "POST",
+    url: "/",
+    data: {
+      data_action: "GENERATE TOTP",
+    },
+    success: function () {
+      console.log("KEY")
+    },
+  });
+}
+
 // const characters =
 //   "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
