@@ -13,6 +13,8 @@ import (
 
 const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
+var secretBase32 = ""
+
 func GenerateTOTP(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.ParseFiles("./templates/totp.html"))
 	context := map[string]interface{}{}
@@ -23,16 +25,21 @@ func GenerateTOTP(w http.ResponseWriter, r *http.Request) {
 	if data_action == "GENERATE" {
 		secret := generateKey(15)
 		fmt.Println("secret:", secret)
-		secretBase32 := base32.StdEncoding.EncodeToString([]byte(secret))
+		secretBase32 = base32.StdEncoding.EncodeToString([]byte(secret))
+		context["generateSecret"] = secret
+	}
+
+	if data_action == "GENERATE TOTP" {
 		totp, err := TOTPGenerator(secretBase32)
 		if err != nil {
 			fmt.Println("Error:", err)
 		} else {
 			fmt.Println("TOTP:", totp)
+			context["generateTOTP"] = totp
 		}
 	}
-
 	tmpl.Execute(w, context)
+
 }
 
 func TOTPGenerator(secret string) (string, error) {
