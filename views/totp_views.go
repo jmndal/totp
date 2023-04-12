@@ -17,13 +17,19 @@ func GenerateTOTP(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.ParseFiles("./templates/totp.html"))
 	context := map[string]interface{}{}
 
-	secret := generateKey(15) // Example secret from RFC 6238
-	fmt.Println("secret:", secret)
-	totp, err := TOTPGenerator(secret)
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		fmt.Println("TOTP:", totp)
+	data_action := r.FormValue("data_action")
+	fmt.Println("data_action", data_action)
+
+	if data_action == "GENERATE" {
+		secret := generateKey(15)
+		fmt.Println("secret:", secret)
+		secretBase32 := base32.StdEncoding.EncodeToString([]byte(secret))
+		totp, err := TOTPGenerator(secretBase32)
+		if err != nil {
+			fmt.Println("Error:", err)
+		} else {
+			fmt.Println("TOTP:", totp)
+		}
 	}
 
 	tmpl.Execute(w, context)
@@ -70,7 +76,7 @@ func TOTPGenerator(secret string) (string, error) {
 }
 
 func generateKey(n int) string {
-	b := make([]byte, n)
+	b := make([]byte, (n+7)/8*8) // round up to multiple of 8
 	for i := range b {
 		b[i] = characters[rand.Intn(len(characters))]
 	}
