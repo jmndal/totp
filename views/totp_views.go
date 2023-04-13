@@ -1,17 +1,23 @@
 package views
 
 import (
+	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base32"
+	"encoding/base64"
+	"encoding/binary"
 	"fmt"
 	"html/template"
-	"math/rand"
+	"image/png"
 	"net/http"
 	"time"
+
+	"github.com/pquerna/otp"
+	"github.com/pquerna/otp/totp"
 )
 
-const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+// const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 var secretBase32 = ""
 
@@ -20,72 +26,104 @@ func GenerateTOTP(w http.ResponseWriter, r *http.Request) {
 	context := map[string]interface{}{}
 
 	data_action := r.FormValue("data_action")
-	fmt.Println("data_action", data_action)
+	fmt.Println("data_action: ", data_action)
 
-	if data_action == "GENERATE" {
-		secret := generateKey(15)
-		fmt.Println("secret:", secret)
-		secretBase32 = base32.StdEncoding.EncodeToString([]byte(secret))
-		context["generateSecret"] = secret
-	}
-
-	if data_action == "GENERATE TOTP" {
-		totp, err := TOTPGenerator(secretBase32)
+	if data_action == "GENERATE_KEY" {
+		key, err := totp.Generate(totp.GenerateOpts{
+			Issuer:      "Your Organization",
+			AccountName: "Username",
+			Period:      30,
+			SecretSize:  10,
+			Algorithm:   otp.AlgorithmSHA256,
+		})
 		if err != nil {
 			fmt.Println("Error:", err)
-		} else {
-			fmt.Println("TOTP:", totp)
-			context["generateTOTP"] = totp
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
+		secretBase32 = key.Secret()
+		qrCode, err := key.Image(200, 200)
+		if err != nil {
+			fmt.Println("Error:", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		qrCodeBuffer := new(bytes.Buffer)
+		err = png.Encode(qrCodeBuffer, qrCode)
+		if err != nil {
+			fmt.Println("Error:", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		qrCodeBase64 := base64.StdEncoding.EncodeToString(qrCodeBuffer.Bytes())
+		context["generateSecret"] = key.Secret()
+		context["qrCode"] = qrCodeBase64
+	}
+
+	if data_action == "GENERATE_TOTP" {
+		totpCode, err := TOTPGenerator(secretBase32)
+		if err != nil {
+			fmt.Println("Error:", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		fmt.Println("TOTP:", totpCode)
+		context["generateTOTP"] = totpCode
 	}
 	tmpl.Execute(w, context)
+}
 
+func ValidateTOTP(w http.ResponseWriter, r *http.Request) {
+	tmpl := template.Must(template.ParseFiles("./templates/totp.html"))
+	context := map[string]interface{}{}
+
+	data_action := r.FormValue("data_action")
+	fmt.Println("data_action: ", data_action)
+
+	if data_action == "VALIDATE_TOTP" {
+		totpCode := r.FormValue("totp_code")
+		valid := ValidateTOTPCode(secretBase32, totpCode)
+		context["validationResult"] = valid
+	}
+
+	tmpl.Execute(w, context)
 }
 
 func TOTPGenerator(secret string) (string, error) {
-	// Decode the secret from base32
-	secretBytes, err := base32.StdEncoding.DecodeString(secret)
+	key, err := totp.GenerateCode(secret, time.Now())
 	if err != nil {
 		return "", err
 	}
-
-	// Get the current Unix time in seconds
-	currentTime := time.Now().Unix()
-
-	// Compute the number of time steps that have elapsed since the Unix epoch
-	timeStep := 30 // TOTP time step in seconds
-	timeSteps := currentTime / int64(timeStep)
-
-	// Convert the time steps to a byte array
-	timeBytes := make([]byte, 8)
-	for i := 7; i >= 0; i-- {
-		timeBytes[i] = byte(timeSteps & 0xff)
-		timeSteps = timeSteps >> 8
-	}
-
-	// Compute the HMAC-SHA256 hash of the time bytes using the secret key
-	hmacSha256 := hmac.New(sha256.New, secretBytes)
-	hmacSha256.Write(timeBytes)
-	hash := hmacSha256.Sum(nil)
-
-	// Extract the 4-byte dynamic offset from the last 4 bits of the hash
-	offset := hash[len(hash)-1] & 0xf
-	code := ((int(hash[offset]) & 0x7f) << 24) |
-		((int(hash[offset+1]) & 0xff) << 16) |
-		((int(hash[offset+2]) & 0xff) << 8) |
-		(int(hash[offset+3]) & 0xff)
-
-	// Truncate the code to a 6-digit TOTP value
-	totp := code % 1000000
-
-	// Convert the TOTP value to a string
-	return fmt.Sprintf("%06d", totp), nil
+	return key, nil
 }
 
-func generateKey(n int) string {
-	b := make([]byte, (n+7)/8*8) // round up to multiple of 8
-	for i := range b {
-		b[i] = characters[rand.Intn(len(characters))]
+func ValidateTOTPCode(secret string, code string) bool {
+	decoded, err := base32.StdEncoding.DecodeString(secret)
+	if err != nil {
+		return false
 	}
-	return string(b)
+
+	counter := uint64(time.Now().Unix() / 30)
+	mac := hmac.New(sha256.New, decoded)
+	err = binary.Write(mac, binary.BigEndian, counter)
+	if err != nil {
+		return false
+	}
+
+	expectedCode := hotpTruncate(mac.Sum(nil))
+	actualCode, err := base32.StdEncoding.DecodeString(code)
+	if err != nil {
+		return false
+	}
+
+	return hmac.Equal(expectedCode, actualCode)
+}
+
+func hotpTruncate(hashedData []byte) []byte {
+	offset := int(hashedData[len(hashedData)-1] & 0xf)
+	binary := ((int(hashedData[offset]) & 0x7f) << 24) |
+		((int(hashedData[offset+1] & 0xff)) << 16) |
+		((int(hashedData[offset+2] & 0xff)) << 8) |
+		(int(hashedData[offset+3]) & 0xff)
+	return []byte(fmt.Sprintf("%06d", binary%1000000))
 }
