@@ -1,13 +1,12 @@
-
-
 function generateKey() {
   $.ajax({
     method: "POST",
     url: "/",
     data: {
-      data_action: "GENERATE",
+      data_action: "GENERATE_KEY",
     },
     success: function () {
+      // $("#key-input").text(result)
       console.log("KEY GENERATED")
     },
   });
@@ -18,24 +17,12 @@ function generateTOTP() {
     method: "POST",
     url: "/",
     data: {
-      data_action: "GENERATE TOTP",
+      data_action: "GENERATE_TOTP",
     },
     success: function () {
-      console.log("KEY")
+      // $("#key-input").text(result);
+      console.log("TOTP GENERATED")
     },
   });
 }
-
-// const characters =
-//   "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-
-// function generateString(length) {
-//   let result = "";
-//   const charactersLength = characters.length;
-//   for (let i = 0; i < length; i++) {
-//     result += characters.charAt(Math.floor(Math.random() * charactersLength));
-//   }
-
-//   return result;
-// }
 
