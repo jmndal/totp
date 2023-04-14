@@ -12,19 +12,20 @@
 <body>
   <h1>TOTP Generator</h1>
   <form method="post">
-    <input type="hidden" name="data_action" value="GENERATE KEY" >
+    <input type="hidden" name="data_action" value="GENERATE KEY">
     <button type="submit">Generate Key</button>
   </form>
   {{ if .qrCode }}
-  <h2>QR Code</h2>
-  <img src="data:image/png;base64,{{ .qrCode }}" alt="QR code" id="img">
   <h2>Secret Key</h2>
   <p id="genSecret">{{ .generateSecret }}</p>
+  <h2>QR Code</h2>
+  <img src="data:image/png;base64,{{ .qrCode }}" alt="QR code" id="img">
   <form method="post">
     <input type="hidden" name="data_action" value="GENERATE TOTP">
     <button type="submit">Generate TOTP</button>
   </form>
   {{ end }}
+
   {{ if .generateTOTP }}
   <h2>Secret Key</h2>
   <p>{{ .key }}</p>
@@ -32,7 +33,6 @@
   <img src="data:image/png;base64,{{ .qr }}" alt="QR code" id="imge">
   <h2>TOTP</h2>
   <p>{{ .generateTOTP }}</p>
-  
   {{ end }}
 </body>
 
