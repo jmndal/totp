@@ -20,6 +20,7 @@ import (
 // const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 var secretBase32 = ""
+var qrCodeBase64 = ""
 
 func GenerateTOTP(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.ParseFiles("./templates/totp.html"))
@@ -28,7 +29,7 @@ func GenerateTOTP(w http.ResponseWriter, r *http.Request) {
 	data_action := r.FormValue("data_action")
 	fmt.Println("data_action: ", data_action)
 
-	if data_action == "GENERATE_KEY" {
+	if data_action == "GENERATE KEY" {
 		key, err := totp.Generate(totp.GenerateOpts{
 			Issuer:      "Your Organization",
 			AccountName: "Username",
@@ -55,12 +56,13 @@ func GenerateTOTP(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
-		qrCodeBase64 := base64.StdEncoding.EncodeToString(qrCodeBuffer.Bytes())
+		qrCodeBase64 = base64.StdEncoding.EncodeToString(qrCodeBuffer.Bytes())
 		context["generateSecret"] = key.Secret()
 		context["qrCode"] = qrCodeBase64
+
 	}
 
-	if data_action == "GENERATE_TOTP" {
+	if data_action == "GENERATE TOTP" {
 		totpCode, err := TOTPGenerator(secretBase32)
 		if err != nil {
 			fmt.Println("Error:", err)
@@ -68,7 +70,11 @@ func GenerateTOTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		fmt.Println("TOTP:", totpCode)
+		fmt.Println("qr:", qrCodeBase64)
 		context["generateTOTP"] = totpCode
+		context["key"] = secretBase32
+		context["qr"] = qrCodeBase64
+
 	}
 	tmpl.Execute(w, context)
 }
