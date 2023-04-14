@@ -10,30 +10,31 @@
 </head>
 
 <body>
-
-  <h1>Generate Key & TOTP</h1>
-
-  <p>Key:</p>
-  <p id="key-input" name="key">{{ .generateSecret }}</p>
-
-  <form method="POST">
-    <input type="hidden" name="data_action" value="GENERATE_KEY">
-    <button id="generate-key__btn" onclick="generateKey()">Generate Key</button>
+  <h1>TOTP Generator</h1>
+  <form method="post">
+    <input type="hidden" name="data_action" value="GENERATE KEY" >
+    <button type="submit">Generate Key</button>
   </form>
-
-  <p>TOTP:</p>
-  <p id="totp-input">{{ .generateTOTP }}</p>
-
-  <form method="POST">
-    <input type="hidden" name="data_action" value="GENERATE_TOTP">
-    <button id="generate-totp__btn" onclick="generateTOTP()">Generate TOTP</button>
+  {{ if .qrCode }}
+  <h2>QR Code</h2>
+  <img src="data:image/png;base64,{{ .qrCode }}" alt="QR code" id="img">
+  <h2>Secret Key</h2>
+  <p id="genSecret">{{ .generateSecret }}</p>
+  <form method="post">
+    <input type="hidden" name="data_action" value="GENERATE TOTP">
+    <button type="submit">Generate TOTP</button>
   </form>
-
-  <p>Validation:</p>
-  <input type="text" name="validate" id="validate-totp">
-  <button id="validate-totp__btn">Validate TOTP</button>
-
+  {{ end }}
+  {{ if .generateTOTP }}
+  <h2>TOTP</h2>
+  <p>{{ .generateTOTP }}</p>
+  <p>{{ .key }}</p>
+  <img src="data:image/png;base64,{{ .qr }}" alt="QR code" id="imge">
+  {{ end }}
 </body>
+
+</html>
+
 <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
 <script src="/static/js/totp.js"></script>
 
