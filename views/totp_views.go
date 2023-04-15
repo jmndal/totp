@@ -13,23 +13,25 @@ import (
 	"github.com/pquerna/otp/totp"
 )
 
-// const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-
 var secretBase32 = ""
 var qrCodeBase64 = ""
-var totpCode = ""
 
 func GenerateTOTP(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.ParseFiles("./templates/totp.html"))
 	context := map[string]interface{}{}
 
 	data_action := r.FormValue("data_action")
-	fmt.Println("data_action: ", data_action)
+	issuer := r.FormValue("issuer")
+	accountName := r.FormValue("accountName")
+	haveKey := r.FormValue("haveKey")
 
 	if data_action == "GENERATE KEY" {
+		fmt.Println("ISSUER: ", issuer)
+		fmt.Println("ACCOUNT NAME: ", accountName)
+
 		key, err := totp.Generate(totp.GenerateOpts{
-			Issuer:      "Your Organization",
-			AccountName: "Username",
+			Issuer:      issuer,
+			AccountName: accountName,
 			Period:      30,
 			SecretSize:  10,
 			Algorithm:   otp.AlgorithmSHA256,
@@ -40,7 +42,6 @@ func GenerateTOTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		secretBase32 = key.Secret()
-
 		qrCode, err := key.Image(200, 200)
 		if err != nil {
 			fmt.Println("Error:", err)
@@ -57,7 +58,6 @@ func GenerateTOTP(w http.ResponseWriter, r *http.Request) {
 		qrCodeBase64 = base64.StdEncoding.EncodeToString(qrCodeBuffer.Bytes())
 		context["generateSecret"] = key.Secret()
 		context["qrCode"] = qrCodeBase64
-
 	}
 
 	if data_action == "GENERATE TOTP" {
@@ -67,14 +67,22 @@ func GenerateTOTP(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
-		fmt.Println("TOTP:", totpCode)
-		fmt.Println("qr:", qrCodeBase64)
 		context["generateTOTP"] = totpCode
 		context["key"] = secretBase32
 		context["qr"] = qrCodeBase64
-
 	}
 
+	if data_action == "HAVE_A_KEY" {
+		totpCode, err := TOTPGenerator(haveKey)
+		if err != nil {
+			fmt.Println("Error:", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		context["generateTOTP"] = totpCode
+		context["key"] = secretBase32
+		context["qr"] = qrCodeBase64
+	}
 	tmpl.Execute(w, context)
 }
 
@@ -84,13 +92,4 @@ func TOTPGenerator(secret string) (string, error) {
 		return "", err
 	}
 	return key, nil
-}
-
-func hotpTruncate(hashedData []byte) []byte {
-	offset := int(hashedData[len(hashedData)-1] & 0xf)
-	binary := ((int(hashedData[offset]) & 0x7f) << 24) |
-		((int(hashedData[offset+1] & 0xff)) << 16) |
-		((int(hashedData[offset+2] & 0xff)) << 8) |
-		(int(hashedData[offset+3]) & 0xff)
-	return []byte(fmt.Sprintf("%06d", binary%1000000))
 }
