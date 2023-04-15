@@ -2,11 +2,7 @@ package views
 
 import (
 	"bytes"
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/base32"
 	"encoding/base64"
-	"encoding/binary"
 	"fmt"
 	"html/template"
 	"image/png"
@@ -21,6 +17,7 @@ import (
 
 var secretBase32 = ""
 var qrCodeBase64 = ""
+var totpCode = ""
 
 func GenerateTOTP(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.ParseFiles("./templates/totp.html"))
@@ -43,6 +40,7 @@ func GenerateTOTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		secretBase32 = key.Secret()
+
 		qrCode, err := key.Image(200, 200)
 		if err != nil {
 			fmt.Println("Error:", err)
@@ -76,21 +74,6 @@ func GenerateTOTP(w http.ResponseWriter, r *http.Request) {
 		context["qr"] = qrCodeBase64
 
 	}
-	tmpl.Execute(w, context)
-}
-
-func ValidateTOTP(w http.ResponseWriter, r *http.Request) {
-	tmpl := template.Must(template.ParseFiles("./templates/totp.html"))
-	context := map[string]interface{}{}
-
-	data_action := r.FormValue("data_action")
-	fmt.Println("data_action: ", data_action)
-
-	if data_action == "VALIDATE_TOTP" {
-		totpCode := r.FormValue("totp_code")
-		valid := ValidateTOTPCode(secretBase32, totpCode)
-		context["validationResult"] = valid
-	}
 
 	tmpl.Execute(w, context)
 }
@@ -101,28 +84,6 @@ func TOTPGenerator(secret string) (string, error) {
 		return "", err
 	}
 	return key, nil
-}
-
-func ValidateTOTPCode(secret string, code string) bool {
-	decoded, err := base32.StdEncoding.DecodeString(secret)
-	if err != nil {
-		return false
-	}
-
-	counter := uint64(time.Now().Unix() / 30)
-	mac := hmac.New(sha256.New, decoded)
-	err = binary.Write(mac, binary.BigEndian, counter)
-	if err != nil {
-		return false
-	}
-
-	expectedCode := hotpTruncate(mac.Sum(nil))
-	actualCode, err := base32.StdEncoding.DecodeString(code)
-	if err != nil {
-		return false
-	}
-
-	return hmac.Equal(expectedCode, actualCode)
 }
 
 func hotpTruncate(hashedData []byte) []byte {
