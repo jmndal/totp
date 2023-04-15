@@ -22,20 +22,31 @@
   <img src="data:image/png;base64,{{ .qrCode }}" alt="QR code" id="img">
   <form method="post">
     <input type="hidden" name="data_action" value="GENERATE TOTP">
-    <button type="submit">Generate TOTP</button>
+    <button type="submit" id="generateBtn">Generate TOTP</button>
   </form>
   {{ end }}
+  
+      {{ if .generateTOTP }}
+      <h2>Secret Key</h2>
+      <p>{{ .key }}</p>
+      <h2>QR Code</h2>
+      <img src="data:image/png;base64,{{ .qr }}" alt="QR code" id="imge">
+      <h2>TOTP</h2>
+      <p id="otp-input">{{ .generateTOTP }}</p>
+      <div id="timer"></div>
+      {{ end }}
 
-  {{ if .generateTOTP }}
-  <h2>Secret Key</h2>
-  <p>{{ .key }}</p>
-  <h2>QR Code</h2>
-  <img src="data:image/png;base64,{{ .qr }}" alt="QR code" id="imge">
-  <h2>TOTP</h2>
-  <p>{{ .generateTOTP }}</p>
-  {{ end }}
+      
+     
+  <h2>Validation</h2>
+  <input type="text" id="totp">
+  <p id="otp-status"></p>
+  <button onclick="validateOTP()" data-action="validate" >Validate</button>
+  
 </body>
-
+<script>
+  
+</script>
 </html>
 
 <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
