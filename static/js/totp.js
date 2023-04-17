@@ -81,7 +81,7 @@ function validateOTP() {
 function updateTimer() {
   var now = new Date();
   var timeLeft = 30 - (now.getSeconds() % 30);
-  $("#timer").text(timeLeft + " seconds");
+  $("#timer").text("Code expires in \n" + timeLeft);
 
   if (now.getSeconds() % 30 === 0) {
     // Wait 1 second and reload the page
@@ -90,6 +90,4 @@ function updateTimer() {
     }, 5);
   }
 }
-
-console.log("hi");
 setInterval(updateTimer, 1000);
