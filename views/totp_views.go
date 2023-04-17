@@ -36,25 +36,16 @@ func GenerateTOTP(w http.ResponseWriter, r *http.Request) {
 			SecretSize:  10,
 			Algorithm:   otp.AlgorithmSHA256,
 		})
-		if err != nil {
-			fmt.Println("Error:", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
+		CheckErr(w, err)
+
 		secretBase32 = key.Secret()
 		qrCode, err := key.Image(200, 200)
-		if err != nil {
-			fmt.Println("Error:", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
+		CheckErr(w, err)
+
 		qrCodeBuffer := new(bytes.Buffer)
 		err = png.Encode(qrCodeBuffer, qrCode)
-		if err != nil {
-			fmt.Println("Error:", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
+		CheckErr(w, err)
+
 		qrCodeBase64 = base64.StdEncoding.EncodeToString(qrCodeBuffer.Bytes())
 		context["generateSecret"] = key.Secret()
 		context["qrCode"] = qrCodeBase64
@@ -62,11 +53,8 @@ func GenerateTOTP(w http.ResponseWriter, r *http.Request) {
 
 	if data_action == "GENERATE TOTP" {
 		totpCode, err := TOTPGenerator(secretBase32)
-		if err != nil {
-			fmt.Println("Error:", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
+		CheckErr(w, err)
+
 		context["generateTOTP"] = totpCode
 		context["key"] = secretBase32
 		context["qr"] = qrCodeBase64
@@ -74,11 +62,8 @@ func GenerateTOTP(w http.ResponseWriter, r *http.Request) {
 
 	if data_action == "HAVE A KEY" {
 		totpCode, err := TOTPGenerator(haveKey)
-		if err != nil {
-			fmt.Println("Error:", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
+		CheckErr(w, err)
+
 		context["haveTOTP"] = totpCode
 		context["genKey"] = haveKey
 		context["haveKey"] = secretBase32
@@ -92,4 +77,12 @@ func TOTPGenerator(secret string) (string, error) {
 		return "", err
 	}
 	return key, nil
+}
+
+func CheckErr(w http.ResponseWriter, err error) {
+	if err != nil {
+		fmt.Println("Error:", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 }
