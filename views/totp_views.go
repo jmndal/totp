@@ -72,16 +72,16 @@ func GenerateTOTP(w http.ResponseWriter, r *http.Request) {
 		context["qr"] = qrCodeBase64
 	}
 
-	if data_action == "HAVE_A_KEY" {
+	if data_action == "HAVE A KEY" {
 		totpCode, err := TOTPGenerator(haveKey)
 		if err != nil {
 			fmt.Println("Error:", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
-		context["generateTOTP"] = totpCode
-		context["key"] = secretBase32
-		context["qr"] = qrCodeBase64
+		context["haveTOTP"] = totpCode
+		context["genKey"] = haveKey
+		context["haveKey"] = secretBase32
 	}
 	tmpl.Execute(w, context)
 }
