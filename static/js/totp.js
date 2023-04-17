@@ -5,6 +5,7 @@ var btnCont = $("#btn-key__generator");
 var totpCont = $("#totp-generate__container");
 var detailsCont = $(".details-container");
 var keyDetails = $(".input-for__key");
+var haveKeyDets = $("#key-input");
 
 totpCont.hide();
 detailsCont.hide();
@@ -17,19 +18,6 @@ function showKeyInput() {
 function displayDetails() {
   detailsCont.show();
   btnCont.hide();
-}
-
-function submitKey() {
-    $.ajax({
-    method: "POST",
-    url: "/",
-    data: {
-      data_action: "GENERATE KEY",
-      issuer: issuer.val(),
-      accountName: accountName.val(),
-    },
-    success: function () {}
-  })
 }
 
 function submitDetails() {
