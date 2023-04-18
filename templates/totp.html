@@ -11,7 +11,6 @@
 
 <body>
   <h1>TOTP Generator</h1>
-
   <button id="btn-key__generator" onclick="displayDetails()">Generate Key</button>
   <button onclick="showKeyInput()">Already have a Key?</button>
 
@@ -25,10 +24,24 @@
   </div>
 
   <div class="details-container">
-    <input type="text" name="your_name" id="name-text" placeholder="Name">
-    <input type="text" name="your_email" id="email-text" placeholder="Email">
-    <button id="submit-details" onclick="submitDetails()">Submit</button>
+    <form method="post">
+      <input type="text" name="issuer" id="name-text" placeholder="Name">
+      <input type="email" name="accountName" id="email-text" placeholder="Email">
+      <input type="hidden" name="data_action" value="GENERATE KEY">
+      <button type="submit" id="submit-details" onclick="submitDetails()">Submit</button>
+    </form>
   </div>
+
+  {{ if .generateSecret }}
+  <div class="row">
+    <div class="col-sm-12">
+      <hr>
+      <h3>Generated Key:</h3>
+      <p>Secret: {{ .generateSecret }}</p>
+      <img src="data:image/png;base64,{{ .qrCode }}" alt="QR Code">
+    </div>
+  </div>
+  {{ end }}
 
   <div class="totp-generate__container">
     <form method="post">
@@ -40,6 +53,7 @@
   <div class="data-container">
     {{ if .generateTOTP }}
     <div class="data-wrapper" id="printDV">
+      <hr>
       <h2>Secret Key</h2>
       <p>{{ .key }}</p>
       <h2>QR Code</h2>
@@ -52,11 +66,11 @@
     <h2>Validation</h2>
     <input type="text" id="totp">
     <p id="otp-status"></p>
-
     <button onclick="validateOTP()" data-action="validate">Validate</button>
     <button class="export-btn" onclick="printQR()">Print QR Code</button>
     {{ end }}
   </div>
+
 
   <div class="data-container">
     {{ if .haveTOTP }}
@@ -71,7 +85,6 @@
     <h2>Validation</h2>
     <input type="text" id="totp">
     <p id="otp-status"></p>
-
     <button onclick="validateOTP()" data-action="validate">Validate</button>
     {{ end }}
   </div>
